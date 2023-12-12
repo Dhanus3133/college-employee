@@ -1,10 +1,25 @@
 "use client";
-import { Employee } from "@prisma/client";
-import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { useRouter } from "next/navigation";
 
 export default function EmployeePage() {
+  const router = useRouter();
   const employeesData = api.employee.list.useQuery();
+  const utils = api.useUtils();
+
+  const fakerEmployee = api.employee.faker.useMutation({
+    onSuccess: () => {
+      utils.employee.list.invalidate();
+    },
+  });
+
+  const deleteEmployee = api.employee.delete.useMutation({
+    onSuccess: () => {
+      utils.employee.list.invalidate();
+    },
+  });
 
   return (
     <div className="container mx-auto my-8">
@@ -15,8 +30,18 @@ export default function EmployeePage() {
           Click here!
         </a>
       </p>
+      <p className="mb-4">
+        Generate a fake one?{" "}
+        <button
+          className="text-blue-500"
+          onClick={() => {
+            fakerEmployee.mutate();
+          }}
+        >
+          Click here!
+        </button>
+      </p>
 
-      {/* Display employee details in a table */}
       <table className="min-w-full border border-gray-300 bg-white">
         <thead>
           <tr className="bg-gray-100">
@@ -39,11 +64,38 @@ export default function EmployeePage() {
               <td className="px-4 py-2">{employee.department}</td>
               <td className="px-4 py-2">
                 {" "}
-                {new Date(employee.createdAt).toLocaleString()}
+                {new Date(employee.createdAt).toLocaleString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                  hour12: false,
+                })}
               </td>
               <td className="px-4 py-2">
                 {" "}
-                {new Date(employee.updatedAt).toLocaleString()}
+                {new Date(employee.updatedAt).toLocaleString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                  hour12: false,
+                })}
+              </td>
+              <td className="px-4 py-2">
+                <button
+                  className="rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-700"
+                  onClick={() => {
+                    router.push("/employee/edit/" + employee.id);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faEdit} />
+                </button>
+              </td>
+
+              <td className="px-4 py-2">
+                <button
+                  className="rounded bg-red-500 px-2 py-1 text-white hover:bg-red-700"
+                  onClick={() => {
+                    deleteEmployee.mutate({ id: employee.id });
+                  }}
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
               </td>
             </tr>
           ))}
